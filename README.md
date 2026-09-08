@@ -4,6 +4,8 @@ A modern, type-safe, and high-performance Flutter plugin for Google Chromecast. 
 
 Perfect for building IPTV apps, video streaming clients, and media players that need seamless casting capabilities.
 
+This plugin is part of the **Iptv Easy app which is available in PlayStore and AppStore**
+
 ## Features
 
 - ⚡ **Type-Safe API**: Generated via Google Pigeon, preventing runtime type-casting crashes.
