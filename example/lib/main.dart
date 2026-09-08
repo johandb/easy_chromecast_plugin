@@ -35,7 +35,7 @@ class _MyAppState extends State<MyApp> {
     // Dit is een officiële, CORS-vrije Apple HLS test-stream (Adaptive Bitrate)
     // Chromecast-ontvangers spelen dit type streams vele malen stabieler af dan rauwe MP4's
     _plugin.playMedia(
-      url: 'http://line.tvprostreaming.live:80/movie/dd03da96e3/ff4d71190ddf/1059111.mp4',
+      url: 'http://mystream.mp4',
       title: 'A Christmas Carol',
     );
   }
