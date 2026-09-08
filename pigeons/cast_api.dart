@@ -7,6 +7,7 @@ import 'package:pigeon/pigeon.dart';
   dartOptions: DartOptions(),
   kotlinOut: 'android/src/main/kotlin/com/jdbs/iptv/easy_chromecast_plugin/CastApi.g.kt',
   kotlinOptions: KotlinOptions(package: 'com.jdbs.iptv.easy_chromecast_plugin'),
+  swiftOut: 'ios/easy_chromecast_plugin/Sources/easy_chromecast_plugin/CastApi.g.swift',
 ))
 
 // De data die we naar Kotlin sturen

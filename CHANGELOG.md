@@ -1,3 +1,6 @@
+## 1.0.3
+* Add chromecast support for IOS
+
 ## 1.0.2
 * Add remote control. Stop, play, forward 
 

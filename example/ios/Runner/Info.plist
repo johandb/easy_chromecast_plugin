@@ -46,6 +46,13 @@
 				</dict>
 			</array>
 		</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>We hebben toegang tot je lokale netwerk nodig om Chromecast-apparaten in de buurt te vinden.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_googlecast._tcp</string>
+		<string>_230941A5._googlecast._tcp</string>
+	</array>
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>

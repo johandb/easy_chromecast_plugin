@@ -62,6 +62,36 @@ Open your `android/app/src/main/AndroidManifest.xml` and add the following netwo
 </manifest>
 ```
 
+## iOS Setup
+
+Since iOS 14, Apple requires explicit user permission to discover and connect to devices on the local network. To make the plugin work on iOS, you must update your app's configuration.
+
+### 1. Update Info.plist
+
+Open `ios/Runner/Info.plist` in your project and add the following keys inside the `<dict>` tag:
+
+```xml
+<key>NSLocalNetworkUsageDescription</key>
+<string>We need access to your local network to discover nearby Chromecast devices.</string>
+<key>NSBonjourServices</key>
+<array>
+    <string>_googlecast._tcp</string>
+    <string>_230941A5._googlecast._tcp</string>
+</array>
+```
+
+* **NSLocalNetworkUsageDescription**: This text is shown to the user when the app requests permission to scan the local network.
+* **NSBonjourServices**: This registers the official Google Chromecast discovery protocols.
+
+### 2. Podfile / Deployment Target
+
+The Google Cast SDK requires a minimum deployment target of **iOS 14.0**. Make sure your `ios/Podfile` has the platform version set correctly:
+
+```ruby
+platform :ios, '14.0'
+```
+
+
 #### Register the CastOptionsProvider
 To prevent the Cast SDK from failing at initialization, add the following `<meta-data>` tag inside the `<application>` block of your host app's `AndroidManifest.xml`:
 
