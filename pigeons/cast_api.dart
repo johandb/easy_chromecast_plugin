@@ -25,5 +25,9 @@ abstract class ChromecastHostApi {
   void showCastDialog(); 
   void playMedia(CastMediaRequest request);
   void stopMedia();
+  
+  void pauseMedia();
+  void resumeMedia();
+  void seekMedia(int positionInSeconds);
 }
 

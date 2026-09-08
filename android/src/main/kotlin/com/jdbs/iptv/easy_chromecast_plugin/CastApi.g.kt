@@ -93,6 +93,9 @@ interface ChromecastHostApi {
   fun showCastDialog()
   fun playMedia(request: CastMediaRequest)
   fun stopMedia()
+  fun pauseMedia()
+  fun resumeMedia()
+  fun seekMedia(positionInSeconds: Long)
 
   companion object {
     /** The codec used by ChromecastHostApi. */
@@ -174,6 +177,56 @@ interface ChromecastHostApi {
           channel.setMessageHandler { _, reply ->
             val wrapped: List<Any?> = try {
               api.stopMedia()
+              listOf(null)
+            } catch (exception: Throwable) {
+              wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.easy_chromecast_plugin.ChromecastHostApi.pauseMedia$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.pauseMedia()
+              listOf(null)
+            } catch (exception: Throwable) {
+              wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.easy_chromecast_plugin.ChromecastHostApi.resumeMedia$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.resumeMedia()
+              listOf(null)
+            } catch (exception: Throwable) {
+              wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.easy_chromecast_plugin.ChromecastHostApi.seekMedia$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val positionInSecondsArg = args[0].let { num -> if (num is Int) num.toLong() else num as Long }
+            val wrapped: List<Any?> = try {
+              api.seekMedia(positionInSecondsArg)
               listOf(null)
             } catch (exception: Throwable) {
               wrapError(exception)

@@ -27,6 +27,21 @@ class EasyChromecastPlugin {
     await _api.showCastDialog();
   }  
 
+  /// Pauzeer de video die momenteel op de Chromecast afspeelt.
+  Future<void> pauseMedia() async {
+    await _api.pauseMedia();
+  }
+
+  /// Hervat de gepauzeerde video op de Chromecast.
+  Future<void> resumeMedia() async {
+    await _api.resumeMedia();
+  }
+
+  /// Spoel naar een specifieke seconde in de video op de Chromecast.
+  Future<void> seekMedia(int positionInSeconds) async {
+    await _api.seekMedia(positionInSeconds);
+  }
+  
   /// Stop het afspelen van de huidige media.
   Future<void> stopMedia() async {
     await _api.stopMedia();

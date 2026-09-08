@@ -9,7 +9,7 @@ Perfect for building IPTV apps, video streaming clients, and media players that 
 - ⚡ **Type-Safe API**: Generated via Google Pigeon, preventing runtime type-casting crashes.
 - 📦 **Modern Kotlin Architecture**: Built with Kotlin DSL (`build.gradle.kts`) and lifecycle-aware components.
 - 📺 **Wide Format Support**: Optimized for streaming `.mp4`, HLS (`.m3u8`), and `.ts` (MPEG-TS) IPTV streams.
-- 🛠️ **DIW7022 (KPN TV+ Box) Compatible**: Hardened against common Android TV contrast/transparency rendering crashes (`#0 translucent background`).
+- 🛠️ **TV Box Compatible**: Hardened against common Android TV contrast/transparency rendering crashes (`#0 translucent background`).
 
 ---
 
@@ -91,7 +91,7 @@ void initState() {
   _chromecastPlugin.initializeCast();
 }
 
-// Open the native Google Cast selection dialog to look for nearby devices (e.g. KPN Box)
+// Open the native Google Cast selection dialog to look for nearby devices (e.g. TV Box)
 Future<void> connectToDevice() async {
   await _chromecastPlugin.showCastDialog();
 }

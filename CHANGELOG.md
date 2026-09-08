@@ -1,5 +1,8 @@
+## 1.0.2
+* Add remote control. Stop, play, forward 
+
 ## 1.0.1
-* **Update example
+* Update example
 
 ## 1.0.0
 

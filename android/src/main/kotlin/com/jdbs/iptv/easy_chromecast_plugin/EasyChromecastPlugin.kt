@@ -131,6 +131,24 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
         }
     }
 
+    override fun pauseMedia() {
+        // Vraag de remoteMediaClient op van de actieve sessie en trigger pause
+        currentSession?.remoteMediaClient?.pause()
+    }
+
+    override fun resumeMedia() {
+        // Hervat het afspelen op de KPN Box
+        currentSession?.remoteMediaClient?.play()
+    }
+
+    override fun seekMedia(positionInSeconds: Long) {
+        // Converteer seconden naar milliseconden (wat de Cast SDK verwacht)
+        val positionInMs = positionInSeconds * 1000
+
+        // Stuur het spoor-commando naar de Chromecast hardware
+        currentSession?.remoteMediaClient?.seek(positionInMs)
+    }
+
     override fun stopMedia() {
         currentSession?.remoteMediaClient?.stop()
     }
