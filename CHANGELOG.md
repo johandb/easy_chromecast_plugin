@@ -1,3 +1,6 @@
+## 1.0.1
+* **Update example
+
 ## 1.0.0
 
 * **Initial Release**: Complete, type-safe Google Chromecast plugin for Flutter using Kotlin and Pigeon.
