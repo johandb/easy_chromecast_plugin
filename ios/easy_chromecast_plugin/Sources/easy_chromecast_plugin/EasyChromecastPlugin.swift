@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import GoogleCast
+import easy_chromecast_plugin
 
 public class EasyChromecastPlugin: NSObject, FlutterPlugin, ChromecastHostApi {
   
