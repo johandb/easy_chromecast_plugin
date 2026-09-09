@@ -26,9 +26,16 @@ abstract class ChromecastHostApi {
   void showCastDialog(); 
   void playMedia(CastMediaRequest request);
   void stopMedia();
+  void disconnectDevice();
   
   void pauseMedia();
   void resumeMedia();
   void seekMedia(int positionInSeconds);
+}
+
+// Native -> Dart (Wat Android/iOS kunnen aanroepen naar Dart)
+@FlutterApi()
+abstract class ChromecastFlutterApi {
+  void onConnectionStatusChanged(bool isConnected);
 }
 

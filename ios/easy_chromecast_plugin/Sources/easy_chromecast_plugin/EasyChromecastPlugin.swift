@@ -1,14 +1,20 @@
 import Flutter
 import UIKit
 import GoogleCast
-import easy_chromecast_plugin
 
-public class EasyChromecastPlugin: NSObject, FlutterPlugin, ChromecastHostApi {
+public class EasyChromecastPlugin: NSObject, FlutterPlugin, ChromecastHostApi, GCKSessionManagerListener {
   
+  private var flutterApi: ChromecastFlutterApi?
+
   public static func register(with registrar: FlutterPluginRegistrar) {
+    let messenger = registrar.messenger()
     let instance = EasyChromecastPlugin()
+    
+    // Initialiseer de Pigeon Flutter API om data terug te kunnen sturen naar Dart
+    instance.flutterApi = ChromecastFlutterApi(binaryMessenger: messenger)
+    
     // Registreer de plugin bij de door Pigeon gegenereerde setup
-    ChromecastHostApiSetup.setUp(binaryMessenger: registrar.messenger(), api: instance)
+    ChromecastHostApiSetup.setUp(binaryMessenger: messenger, api: instance)
   }
 
   // MARK: - ChromecastHostApi Implementatie
@@ -18,13 +24,15 @@ public class EasyChromecastPlugin: NSObject, FlutterPlugin, ChromecastHostApi {
     DispatchQueue.main.async {
       if !GCKCastContext.isSharedInstanceInitialized() {
         // We gebruiken de standaard Google App ID. 
-        // Als gebruikers een custom ontvanger hebben, moeten ze dit in hun eigen AppDelegate configureren.
         let options = GCKCastOptions(discoveryCriteria: GCKDiscoveryCriteria(applicationID: kGCKDefaultMediaReceiverApplicationID))
         GCKCastContext.setSharedInstanceWith(options)
         
         // Zorg dat de SDK luistert naar de juiste netwerk- en cast-events
         GCKCastContext.sharedInstance().useDefaultExpandedMediaControls = true
       }
+      
+      // Registreer deze klasse als listener voor verbindingssessies
+      GCKCastContext.sharedInstance().sessionManager.add(self)
     }
   }
 
@@ -82,6 +90,13 @@ public class EasyChromecastPlugin: NSObject, FlutterPlugin, ChromecastHostApi {
       }
     }
   }
+  
+  public func disconnectDevice() throws {
+    DispatchQueue.main.async {
+      // True betekent dat ook de receiver app op de KPN Box netjes wordt afgesloten
+      GCKCastContext.sharedInstance().sessionManager.endSessionAndStopCasting(true)
+    }
+  }  
 
   public func pauseMedia() throws {
     DispatchQueue.main.async {
@@ -111,5 +126,28 @@ public class EasyChromecastPlugin: NSObject, FlutterPlugin, ChromecastHostApi {
         remoteMediaClient.seek(with: options)
       }
     }
+  }
+
+  // MARK: - GCKSessionManagerListener Implementatie (Native -> Dart)
+
+  public func sessionManager(_ sessionManager: GCKSessionManager, didStart session: GCKSession) {
+	// Korte vertraging op de main queue
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        if session.remoteMediaClient != nil {
+            self.flutterApi?.onConnectionStatusChanged(isConnected: true) { _ in }
+        }
+    }	
+  }
+  
+  public func sessionManager(_ sessionManager: GCKSessionManager, didResumeSession session: GCKSession) {
+    flutterApi?.onConnectionStatusChanged(isConnected: true) { _ in }
+  }
+  
+  public func sessionManager(_ sessionManager: GCKSessionManager, didEnd session: GCKSession, withError error: Error?) {
+    flutterApi?.onConnectionStatusChanged(isConnected: false) { _ in }
+  }
+  
+  public func sessionManager(_ sessionManager: GCKSessionManager, didSuspendSession session: GCKSession, with reason: GCKConnectionSuspendReason) {
+    flutterApi?.onConnectionStatusChanged(isConnected: false) { _ in }
   }
 }

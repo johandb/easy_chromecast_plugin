@@ -11,6 +11,8 @@ import com.google.android.gms.cast.MediaInfo
 import com.google.android.gms.cast.MediaLoadRequestData
 import com.google.android.gms.cast.MediaMetadata
 import com.google.android.gms.cast.framework.CastContext
+import com.google.android.gms.cast.framework.CastSession
+import com.google.android.gms.cast.framework.SessionManagerListener
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -18,8 +20,9 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
 
     private lateinit var context: Context
-    private var activity: Activity? = null // Houd hier de actieve Activity bij
+    private var activity: Activity? = null 
     private var castContext: CastContext? = null
+    private var flutterApi: ChromecastFlutterApi? = null
 
     private val currentSession
         get() = castContext?.sessionManager?.currentCastSession
@@ -28,17 +31,22 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
+        
+        // Setup de Pigeon API's met de juiste klassenamen uit je nieuwe pigeon bestand
         ChromecastHostApi.setUp(flutterPluginBinding.binaryMessenger, this)
+        flutterApi = ChromecastFlutterApi(flutterPluginBinding.binaryMessenger)
     }
 
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
         ChromecastHostApi.setUp(binding.binaryMessenger, null)
+        castContext?.sessionManager?.removeSessionManagerListener(castSessionListener, CastSession::class.java)
+        flutterApi = null
     }
 
     // --- 2. Activity Lifecycle Management (ActivityAware) ---
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        this.activity = binding.activity // Hier vangen we de echte Activity context op
+        this.activity = binding.activity 
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
@@ -53,13 +61,17 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
         this.activity = null
     }
 
-    // --- 3. Implementatie van de API ---
+    // --- 3. Implementatie van de ChromecastHostApi ---
 
     override fun initializeCast() {
-        castContext = try {
-            CastContext.getSharedInstance(context)
-        } catch (e: Exception) {
-            null
+        // Zorg dat de initialisatie en listener registratie veilig gebeurt
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            try {
+                castContext = CastContext.getSharedInstance(context)
+                castContext?.sessionManager?.addSessionManagerListener(castSessionListener, CastSession::class.java)
+            } catch (e: Exception) {
+                castContext = null
+            }
         }
     }
 
@@ -76,11 +88,8 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
 
         (currentActivity as? FragmentActivity)?.let { fragmentActivity ->
             if (mediaRouteSelector != null) {
-                // We gebruiken nu weer de standaard, ingebouwde AndroidX klasse!
                 val dialog = MediaRouteChooserDialogFragment()
                 dialog.routeSelector = mediaRouteSelector
-
-                // Toon de dialoog via de FragmentManager
                 dialog.show(fragmentActivity.supportFragmentManager, "CastDialog")
             }
         }
@@ -92,15 +101,11 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
 
         val videoUrl = request.url
 
-        // 1. Bepaal dynamisch de juiste MIME-type op basis van je IPTV extensie
         val mimeType = when {
-            videoUrl.contains(
-                ".ts",
-                ignoreCase = true
-            ) -> "video/mp2t"       // Essentieel voor IPTV streams!
-            videoUrl.contains(".mkv", ignoreCase = true) -> "video/x-matroska" // Voor MKV bestanden
-            videoUrl.contains(".m3u8", ignoreCase = true) -> "application/x-mpegURL" // Voor HLS
-            else -> "video/mp4" // Default fallback
+            videoUrl.contains(".ts", ignoreCase = true) -> "video/mp2t"       
+            videoUrl.contains(".mkv", ignoreCase = true) -> "video/x-matroska" 
+            videoUrl.contains(".m3u8", ignoreCase = true) -> "application/x-mpegURL" 
+            else -> "video/mp4" 
         }
 
         val movieMetadata = MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE).apply {
@@ -109,7 +114,6 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
         }
 
         val mediaInfo = MediaInfo.Builder(videoUrl)
-            // 2. Gebruik STREAM_TYPE_LIVE voor .ts streams (IPTV) en STREAM_TYPE_BUFFERED voor losse bestanden (.mp4/.mkv)
             .setStreamType(
                 if (videoUrl.contains(".ts") || videoUrl.contains(".m3u8")) {
                     MediaInfo.STREAM_TYPE_LIVE
@@ -117,7 +121,7 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
                     MediaInfo.STREAM_TYPE_BUFFERED
                 }
             )
-            .setContentType(mimeType) // Injecteer de dynamische MIME-type
+            .setContentType(mimeType) 
             .setMetadata(movieMetadata)
             .build()
 
@@ -132,33 +136,63 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
     }
 
     override fun pauseMedia() {
-        // Vraag de remoteMediaClient op van de actieve sessie en trigger pause
         currentSession?.remoteMediaClient?.pause()
     }
 
     override fun resumeMedia() {
-        // Hervat het afspelen op de KPN Box
         currentSession?.remoteMediaClient?.play()
     }
 
     override fun seekMedia(positionInSeconds: Long) {
-        // Converteer seconden naar milliseconden (wat de Cast SDK verwacht)
         val positionInMs = positionInSeconds * 1000
-
-        // Stuur het spoor-commando naar de Chromecast hardware
         currentSession?.remoteMediaClient?.seek(positionInMs)
     }
 
     override fun stopMedia() {
         currentSession?.remoteMediaClient?.stop()
     }
+	
+	override fun disconnectDevice() {
+		android.os.Handler(android.os.Looper.getMainLooper()).post {
+			// endSession(true) zorgt ervoor dat de Chromecast-verbinding hard wordt verbroken
+			castContext?.sessionManager?.endCurrentSession(true)
+		}
+	}
+
+    // --- 4. Google Cast Session Listener (Native -> Dart) ---
+
+    private val castSessionListener = object : SessionManagerListener<CastSession> {
+        override fun onSessionStarted(session: CastSession, sessionId: String) {
+			// Wacht heel even op de Main Looper tot de client gereed is
+			android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+				if (session.isConnected && session.remoteMediaClient != null) {
+					flutterApi?.onConnectionStatusChanged(true) {}
+				}
+			}, 500)		
+        }
+
+        override fun onSessionResumed(session: CastSession, wasSuspended: Boolean) {
+            flutterApi?.onConnectionStatusChanged(true) { /* no-op */ }
+        }
+
+        override fun onSessionEnded(session: CastSession, error: Int) {
+            flutterApi?.onConnectionStatusChanged(false) { /* no-op */ }
+        }
+
+        override fun onSessionSuspended(session: CastSession, reason: Int) {
+            flutterApi?.onConnectionStatusChanged(false) { /* no-op */ }
+        }
+
+        // HIER ZAT DE FOUT: 'sessionId: String' in plaats van 'wasSuspended: Boolean'
+        override fun onSessionResuming(session: CastSession, sessionId: String) {}
+        
+        override fun onSessionStarting(session: CastSession) {}
+        override fun onSessionStartFailed(session: CastSession, error: Int) {}
+        override fun onSessionResumeFailed(session: CastSession, error: Int) {}
+        override fun onSessionEnding(session: CastSession) {}
+    }
 }
 
-/**
- * Een benoemde, publieke top-level klasse.
- * Dit is de Kotlin-equivalent van een "public static class" in Java.
- * Android kan deze klasse probleemloos hercreëren zonder IllegalStateException.
- */
 class FixedMediaRouteChooserDialogFragment : MediaRouteChooserDialogFragment() {
 
     private var customThemeId: Int = 0
@@ -166,7 +200,6 @@ class FixedMediaRouteChooserDialogFragment : MediaRouteChooserDialogFragment() {
     override fun getContext(): Context? {
         val baseContext = super.getContext() ?: return null
 
-        // Haal het thema ID op uit de arguments bundle als het object hercreëerd wordt
         if (customThemeId == 0) {
             customThemeId = arguments?.getInt(ARG_THEME_ID) ?: 0
         }
@@ -178,7 +211,6 @@ class FixedMediaRouteChooserDialogFragment : MediaRouteChooserDialogFragment() {
         }
     }
 
-    // Companion object is de plek in Kotlin voor static functies en constanten
     companion object {
         private const val ARG_THEME_ID = "theme_res_id"
 

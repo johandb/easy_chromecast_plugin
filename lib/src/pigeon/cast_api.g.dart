@@ -15,6 +15,16 @@ PlatformException _createConnectionError(String channelName) {
   );
 }
 
+List<Object?> wrapResponse({Object? result, PlatformException? error, bool empty = false}) {
+  if (empty) {
+    return <Object?>[];
+  }
+  if (error == null) {
+    return <Object?>[result];
+  }
+  return <Object?>[error.code, error.message, error.details];
+}
+
 class CastMediaRequest {
   CastMediaRequest({
     required this.url,
@@ -193,6 +203,28 @@ class ChromecastHostApi {
     }
   }
 
+  Future<void> disconnectDevice() async {
+    final String pigeonVar_channelName = 'dev.flutter.pigeon.easy_chromecast_plugin.ChromecastHostApi.disconnectDevice$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList =
+        await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else {
+      return;
+    }
+  }
+
   Future<void> pauseMedia() async {
     final String pigeonVar_channelName = 'dev.flutter.pigeon.easy_chromecast_plugin.ChromecastHostApi.pauseMedia$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
@@ -256,6 +288,41 @@ class ChromecastHostApi {
       );
     } else {
       return;
+    }
+  }
+}
+
+abstract class ChromecastFlutterApi {
+  static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
+
+  void onConnectionStatusChanged(bool isConnected);
+
+  static void setUp(ChromecastFlutterApi? api, {BinaryMessenger? binaryMessenger, String messageChannelSuffix = '',}) {
+    messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
+    {
+      final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.easy_chromecast_plugin.ChromecastFlutterApi.onConnectionStatusChanged$messageChannelSuffix', pigeonChannelCodec,
+          binaryMessenger: binaryMessenger);
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          assert(message != null,
+          'Argument for dev.flutter.pigeon.easy_chromecast_plugin.ChromecastFlutterApi.onConnectionStatusChanged was null.');
+          final List<Object?> args = (message as List<Object?>?)!;
+          final bool? arg_isConnected = (args[0] as bool?);
+          assert(arg_isConnected != null,
+              'Argument for dev.flutter.pigeon.easy_chromecast_plugin.ChromecastFlutterApi.onConnectionStatusChanged was null, expected non-null bool.');
+          try {
+            api.onConnectionStatusChanged(arg_isConnected!);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          }          catch (e) {
+            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          }
+        });
+      }
     }
   }
 }

@@ -55,6 +55,10 @@ private func wrapError(_ error: Any) -> [Any?] {
   ]
 }
 
+private func createConnectionError(withChannelName channelName: String) -> PigeonError {
+  return PigeonError(code: "channel-error", message: "Unable to establish connection on channel: '\(channelName)'.", details: "")
+}
+
 private func isNullish(_ value: Any?) -> Bool {
   return value is NSNull || value == nil
 }
@@ -132,6 +136,7 @@ protocol ChromecastHostApi {
   func showCastDialog() throws
   func playMedia(request: CastMediaRequest) throws
   func stopMedia() throws
+  func disconnectDevice() throws
   func pauseMedia() throws
   func resumeMedia() throws
   func seekMedia(positionInSeconds: Int64) throws
@@ -210,6 +215,19 @@ class ChromecastHostApiSetup {
     } else {
       stopMediaChannel.setMessageHandler(nil)
     }
+    let disconnectDeviceChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.easy_chromecast_plugin.ChromecastHostApi.disconnectDevice\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      disconnectDeviceChannel.setMessageHandler { _, reply in
+        do {
+          try api.disconnectDevice()
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      disconnectDeviceChannel.setMessageHandler(nil)
+    }
     let pauseMediaChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.easy_chromecast_plugin.ChromecastHostApi.pauseMedia\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       pauseMediaChannel.setMessageHandler { _, reply in
@@ -250,6 +268,39 @@ class ChromecastHostApiSetup {
       }
     } else {
       seekMediaChannel.setMessageHandler(nil)
+    }
+  }
+}
+/// Generated protocol from Pigeon that represents Flutter messages that can be called from Swift.
+protocol ChromecastFlutterApiProtocol {
+  func onConnectionStatusChanged(isConnected isConnectedArg: Bool, completion: @escaping (Result<Void, PigeonError>) -> Void)
+}
+class ChromecastFlutterApi: ChromecastFlutterApiProtocol {
+  private let binaryMessenger: FlutterBinaryMessenger
+  private let messageChannelSuffix: String
+  init(binaryMessenger: FlutterBinaryMessenger, messageChannelSuffix: String = "") {
+    self.binaryMessenger = binaryMessenger
+    self.messageChannelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
+  }
+  var codec: CastApiPigeonCodec {
+    return CastApiPigeonCodec.shared
+  }
+  func onConnectionStatusChanged(isConnected isConnectedArg: Bool, completion: @escaping (Result<Void, PigeonError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.easy_chromecast_plugin.ChromecastFlutterApi.onConnectionStatusChanged\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([isConnectedArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PigeonError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(Void()))
+      }
     }
   }
 }
