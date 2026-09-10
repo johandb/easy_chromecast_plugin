@@ -17,7 +17,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  pigeon: ^21.0.0
+  pigeon: ^28.0.0
 
 topics:
   - chromecast
@@ -31,4 +31,6 @@ flutter:
     platforms:
       android:
         package: com.jdbs.iptv.easy_chromecast_plugin
+        pluginClass: EasyChromecastPlugin
+      ios:
         pluginClass: EasyChromecastPlugin

@@ -14,10 +14,7 @@ class EasyChromecastPlugin implements ChromecastFlutterApi {
   /// Publieke stream waar de gebruiker naar kan luisteren voor verbindingsupdates.
   Stream<bool> get onConnectionChanged => _connectionStreamController.stream;
   
-  EasyChromecastPlugin() {
-    // Let op de hoofdletter 'U' bij setUp
-    ChromecastFlutterApi.setUp(this);
-  }  
+  EasyChromecastPlugin();
   
   // Dit is de methode die automatisch vanuit Android/iOS wordt aangeroepen via Pigeon
   @override
@@ -28,6 +25,7 @@ class EasyChromecastPlugin implements ChromecastFlutterApi {
   /// Initialiseer de Google Cast SDK.
   /// Moet vroeg in de app-lifecycle worden aangeroepen.
   Future<void> initializeCast() async {
+    ChromecastFlutterApi.setUp(this);
     await _api.initializeCast();
   }
 

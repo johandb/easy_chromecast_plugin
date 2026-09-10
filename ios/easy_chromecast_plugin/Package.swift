@@ -1,36 +1,31 @@
 // swift-tools-version: 5.9
-// The swift-tools-version declares the minimum version of Swift required to build this package.
-
 import PackageDescription
 
 let package = Package(
     name: "easy_chromecast_plugin",
     platforms: [
-        .iOS("15.0")
+        .iOS(.v14) // Chromecast vereist minimaal iOS 14
     ],
     products: [
         .library(name: "easy-chromecast-plugin", targets: ["easy_chromecast_plugin"])
     ],
     dependencies: [
-        .package(name: "FlutterFramework", path: "../FlutterFramework")
+        // 1. DE ESSENTIËLE FLUTTER KOPPELING (Kopieer van de werkende test-plugin)
+        .package(name: "FlutterFramework", path: "../FlutterFramework"),
+        
+        // 2. DE VOLLEDIGE EN CORRECTE GOOGLE CAST SDK LINK
+        .package(url: "https://github.com", from: "4.8.0")
     ],
     targets: [
-        .target(
+        .targets
             name: "easy_chromecast_plugin",
             dependencies: [
-                .product(name: "FlutterFramework", package: "FlutterFramework")
+                // Koppel de plugin aan de Flutter engine
+                .product(name: "FlutterFramework", package: "FlutterFramework"),
+                // Koppel de plugin aan de Google Cast SDK
+                .product(name: "GoogleCast", package: "google-cast-sdk-ios-no-atv")
             ],
-            resources: [
-                // If your plugin requires a privacy manifest, for example if it uses any required
-                // reason APIs, update the PrivacyInfo.xcprivacy file to describe your plugin's
-                // privacy impact, and then uncomment these lines. For more information, see
-                // https://developer.apple.com/documentation/bundleresources/privacy_manifest_files
-                // .process("PrivacyInfo.xcprivacy"),
-
-                // If you have other resources that need to be bundled with your plugin, refer to
-                // the following instructions to add them:
-                // https://developer.apple.com/documentation/xcode/bundling-resources-with-a-swift-package
-            ]
+            path: "easy_chromecast_plugin/Sources/easy_chromecast_plugin"
         )
     ]
 )
