@@ -16,6 +16,10 @@ import com.google.android.gms.cast.framework.SessionManagerListener
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+// FIX: Importeer de benodigde Kotlin Coroutines voor Pigeon
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
 
@@ -32,7 +36,6 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
         
-        // Setup de Pigeon API's met de juiste klassenamen uit je nieuwe pigeon bestand
         ChromecastHostApi.setUp(flutterPluginBinding.binaryMessenger, this)
         flutterApi = ChromecastFlutterApi(flutterPluginBinding.binaryMessenger)
     }
@@ -64,7 +67,6 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
     // --- 3. Implementatie van de ChromecastHostApi ---
 
     override fun initializeCast() {
-        // Zorg dat de initialisatie en listener registratie veilig gebeurt
         android.os.Handler(android.os.Looper.getMainLooper()).post {
             try {
                 castContext = CastContext.getSharedInstance(context)
@@ -152,40 +154,48 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
         currentSession?.remoteMediaClient?.stop()
     }
 	
-	override fun disconnectDevice() {
-		android.os.Handler(android.os.Looper.getMainLooper()).post {
-			// endSession(true) zorgt ervoor dat de Chromecast-verbinding hard wordt verbroken
-			castContext?.sessionManager?.endCurrentSession(true)
-		}
-	}
+    override fun disconnectDevice() {
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            castContext?.sessionManager?.endCurrentSession(true)
+        }
+    }
 
     // --- 4. Google Cast Session Listener (Native -> Dart) ---
 
     private val castSessionListener = object : SessionManagerListener<CastSession> {
         override fun onSessionStarted(session: CastSession, sessionId: String) {
-			// Wacht heel even op de Main Looper tot de client gereed is
-			android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-				if (session.isConnected && session.remoteMediaClient != null) {
-					flutterApi?.onConnectionStatusChanged(true) {}
-				}
-			}, 500)		
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                if (session.isConnected && session.remoteMediaClient != null) {
+                    // FIX: Lanceer via CoroutineScope op Dispatchers.Main en verwijder {}
+                    CoroutineScope(Dispatchers.Main).launch {
+                        flutterApi?.onConnectionStatusChanged(true)
+                    }
+                }
+            }, 500)		
         }
 
         override fun onSessionResumed(session: CastSession, wasSuspended: Boolean) {
-            flutterApi?.onConnectionStatusChanged(true) { /* no-op */ }
+            // FIX: Gecorrigeerd naar asynchrone Coroutine zonder closure
+            CoroutineScope(Dispatchers.Main).launch {
+                flutterApi?.onConnectionStatusChanged(true)
+            }
         }
 
         override fun onSessionEnded(session: CastSession, error: Int) {
-            flutterApi?.onConnectionStatusChanged(false) { /* no-op */ }
+            // FIX: Gecorrigeerd naar asynchrone Coroutine zonder closure
+            CoroutineScope(Dispatchers.Main).launch {
+                flutterApi?.onConnectionStatusChanged(false)
+            }
         }
 
         override fun onSessionSuspended(session: CastSession, reason: Int) {
-            flutterApi?.onConnectionStatusChanged(false) { /* no-op */ }
+            // FIX: Gecorrigeerd naar asynchrone Coroutine zonder closure
+            CoroutineScope(Dispatchers.Main).launch {
+                flutterApi?.onConnectionStatusChanged(false)
+            }
         }
 
-        // HIER ZAT DE FOUT: 'sessionId: String' in plaats van 'wasSuspended: Boolean'
         override fun onSessionResuming(session: CastSession, sessionId: String) {}
-        
         override fun onSessionStarting(session: CastSession) {}
         override fun onSessionStartFailed(session: CastSession, error: Int) {}
         override fun onSessionResumeFailed(session: CastSession, error: Int) {}

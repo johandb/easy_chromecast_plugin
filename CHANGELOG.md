@@ -1,3 +1,6 @@
+## 1.0.4
+* Bugfix Android 
+
 ## 1.0.3
 * Add chromecast support for IOS
 
