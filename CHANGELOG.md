@@ -1,3 +1,12 @@
+## 1.0.3
+* Add chromecast support for IOS
+
+## 1.0.2
+* Add remote control. Stop, play, forward 
+
+## 1.0.1
+* Update example
+
 ## 1.0.0
 
 * **Initial Release**: Complete, type-safe Google Chromecast plugin for Flutter using Kotlin and Pigeon.

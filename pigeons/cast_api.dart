@@ -5,8 +5,10 @@ import 'package:pigeon/pigeon.dart';
 @ConfigurePigeon(PigeonOptions(
   dartOut: 'lib/src/pigeon/cast_api.g.dart',
   dartOptions: DartOptions(),
+  dartPackageName: 'easy_chromecast_plugin',
   kotlinOut: 'android/src/main/kotlin/com/jdbs/iptv/easy_chromecast_plugin/CastApi.g.kt',
   kotlinOptions: KotlinOptions(package: 'com.jdbs.iptv.easy_chromecast_plugin'),
+  swiftOut: 'ios/Classes/CastApi.g.swift',
 ))
 
 // De data die we naar Kotlin sturen
@@ -25,5 +27,16 @@ abstract class ChromecastHostApi {
   void showCastDialog(); 
   void playMedia(CastMediaRequest request);
   void stopMedia();
+  void disconnectDevice();
+  
+  void pauseMedia();
+  void resumeMedia();
+  void seekMedia(int positionInSeconds);
+}
+
+// Native -> Dart (Wat Android/iOS kunnen aanroepen naar Dart)
+@FlutterApi()
+abstract class ChromecastFlutterApi {
+  void onConnectionStatusChanged(bool isConnected);
 }
 
