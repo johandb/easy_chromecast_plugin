@@ -1,3 +1,6 @@
+## 1.0.5
+* Readme fix for Android
+
 ## 1.0.4
 * Bugfix Android 
 

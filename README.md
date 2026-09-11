@@ -62,6 +62,17 @@ Open your `android/app/src/main/AndroidManifest.xml` and add the following netwo
 </manifest>
 ```
 
+#### Register the CastOptionsProvider
+To prevent the Cast SDK from failing at initialization, add the following `<meta-data>` tag inside the `<application>` block of your host app's `AndroidManifest.xml`:
+
+```xml
+<application ...>
+    <meta-data
+        android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
+        android:value="com.jdbs.iptv.easy_chromecast_plugin.CastOptionsProvider" />
+</application>
+```
+
 ## iOS Setup
 
 Since iOS 14, Apple requires explicit user permission to discover and connect to devices on the local network. To make the plugin work on iOS, you must update your app's configuration.
@@ -89,18 +100,6 @@ The Google Cast SDK requires a minimum deployment target of **iOS 14.0**. Make s
 
 ```ruby
 platform :ios, '14.0'
-```
-
-
-#### Register the CastOptionsProvider
-To prevent the Cast SDK from failing at initialization, add the following `<meta-data>` tag inside the `<application>` block of your host app's `AndroidManifest.xml`:
-
-```xml
-<application ...>
-    <meta-data
-        android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
-        android:value="com.jdbs.iptv.easy_chromecast_plugin.CastOptionsProvider" />
-</application>
 ```
 
 ---
