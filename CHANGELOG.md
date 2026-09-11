@@ -1,3 +1,6 @@
+## 1.0.8
+* Fix dart:js deprecation warning and updated dartdoc comments
+
 ## 1.0.7
 * Updated README for web
 

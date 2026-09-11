@@ -14,6 +14,7 @@ class EasyChromecastPlugin implements ChromecastFlutterApi {
   
   EasyChromecastPlugin();
   
+  /// Check the connection change
   @override
   void onConnectionStatusChanged(bool isConnected) {
     _connectionStreamController.add(isConnected);
@@ -57,22 +58,27 @@ class EasyChromecastPlugin implements ChromecastFlutterApi {
     }
   }
 
+  /// Pause the media
   Future<void> pauseMedia() async {
     if (kIsWeb) { await EasyChromecastPluginWeb.pauseMedia(); } else { await _api.pauseMedia(); }
   }
 
+  /// Continue playing media 
   Future<void> resumeMedia() async {
     if (kIsWeb) { await EasyChromecastPluginWeb.resumeMedia(); } else { await _api.resumeMedia(); }
   }
 
+  /// Seek to a specific position
   Future<void> seekMedia(int positionInSeconds) async {
     if (kIsWeb) { await EasyChromecastPluginWeb.seekMedia(positionInSeconds); } else { await _api.seekMedia(positionInSeconds); }
   }
   
+  /// Stop playing media
   Future<void> stopMedia() async {
     if (kIsWeb) { await EasyChromecastPluginWeb.stopMedia(); } else { await _api.stopMedia(); }
   }
  
+  /// Disconnect the chromecast device
   Future<void> disconnectDevice() async {
     if (kIsWeb) { await EasyChromecastPluginWeb.disconnectDevice(); } else { await _api.disconnectDevice(); }
   }
