@@ -1,3 +1,7 @@
+## 1.0.9
+* Compile error fix for web
+* Analyze issues fix
+
 ## 1.0.8
 * Fix dart:js deprecation warning and updated dartdoc comments
 

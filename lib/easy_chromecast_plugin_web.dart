@@ -3,6 +3,9 @@ import 'dart:async';
 import 'dart:js_interop'; 
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
+@JS('eval')
+external JSAny? _jsEval(String code);
+
 class EasyChromecastPluginWeb {
   
   static void registerWith(Registrar registrar) {
@@ -84,9 +87,8 @@ class EasyChromecastPluginWeb {
   // Interop helper die eval aanroept via de nieuwe js_interop standaarden
   static dynamic _eval(String source) {
     try {
-      return (globalContext.getProperty('eval'.toJS) as JSFunction).call(null, source.toJS);
+	  return _jsEval(source);
     } catch (e) {
-      print(e);
       return null;
     }
   }

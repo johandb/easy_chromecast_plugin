@@ -57,14 +57,6 @@ class _MyAppState extends State<MyApp> {
     super.dispose();
   }
 
-  // De handmatige check kan blijven bestaan als fallback, maar is in principe overbodig geworden
-  Future<void> _checkConnection() async {
-    final connected = await _plugin.isConnected();
-    setState(() {
-      _isConnected = connected;
-    });
-  }
-
   void _startStreaming() {
     // Reset de timer bij het starten van een nieuwe film
     _currentPositionInSeconds = 0;
