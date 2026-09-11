@@ -73,6 +73,19 @@ To prevent the Cast SDK from failing at initialization, add the following `<meta
 </application>
 ```
 
+## Web Setup
+
+To enable Google Chromecast support in web applications, you must include the official Google Chrome Sender SDK script in your project's main HTML file.
+
+Open `web/index.html` in your Flutter project and paste the following script tag inside the `<head>` block:
+
+```html
+<script type="text/javascript" src="https://gstatic.com"></script>
+```
+
+*Note: The Google Cast Web SDK is only supported in Chromium-based browsers (like Google Chrome and Microsoft Edge) and requires a Secure Context (HTTPS) or localhost during local development.*
+
+
 ## iOS Setup
 
 Since iOS 14, Apple requires explicit user permission to discover and connect to devices on the local network. To make the plugin work on iOS, you must update your app's configuration.

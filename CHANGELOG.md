@@ -1,3 +1,6 @@
+## 1.0.7
+* Updated README for web
+
 ## 1.0.6
 * Add Web support for plugin
 
