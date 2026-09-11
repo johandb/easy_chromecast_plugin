@@ -34,7 +34,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final _plugin = EasyChromecastPlugin();
   bool _isConnected = false;
   StreamSubscription<bool>? _connectionSubscription;
-  int _currentPositionInSeconds = 0;
 
   @override
   void initState() {
@@ -55,7 +54,6 @@ class _HomeScreenState extends State<HomeScreen> {
       } else {
         setState(() {
           _isConnected = false;
-          _currentPositionInSeconds = 0;
         });
       }
     });
@@ -68,7 +66,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _startStreaming() async {
-    _currentPositionInSeconds = 0;
     print("******* START STREAMING");
 
     _plugin.playMedia(url: 'https://www.jdbs.nl/iptv/movie/demo/demo/20301.mp4', title: 'IPTV Easy Movie Test');
@@ -86,16 +83,8 @@ class _HomeScreenState extends State<HomeScreen> {
       // Update de UI status netjes terug naar disconnected
       setState(() {
         _isConnected = false;
-        _currentPositionInSeconds = 0;
       });
     }
-  }
-
-  void _seekForward30Seconds() {
-    setState(() {
-      _currentPositionInSeconds += 30;
-    });
-    _plugin.seekMedia(_currentPositionInSeconds);
   }
 
   @override

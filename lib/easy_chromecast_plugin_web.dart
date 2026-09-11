@@ -83,6 +83,10 @@ class EasyChromecastPluginWeb {
       }
     ''');
   }
+  
+  static Future<void> setVolume(double volume) async {
+  }
+
 
   // Interop helper die eval aanroept via de nieuwe js_interop standaarden
   static dynamic _eval(String source) {
