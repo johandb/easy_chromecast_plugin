@@ -1,3 +1,6 @@
+## 1.0.6
+* Add Web support for plugin
+
 ## 1.0.5
 * Readme fix for Android
 

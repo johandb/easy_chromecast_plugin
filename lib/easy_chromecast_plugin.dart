@@ -1,72 +1,79 @@
-// lib/easy_chromecast_plugin.dart
 import 'dart:async';
+import 'package:flutter/foundation.dart'; // Importeer kIsWeb
 import 'src/pigeon/cast_api.g.dart';
 
-// Voeg 'implements ChromecastFlutterApi' toe zodat deze klasse naar native events kan luisteren
-class EasyChromecastPlugin implements ChromecastFlutterApi {
-  
-  // Initialiseer de Host API die door Pigeon is gegenereerd
-  final ChromecastHostApi _api = ChromecastHostApi();
+// FIX: Laad de weblaag conditioneel via het absolute package pad
+import 'package:easy_chromecast_plugin/easy_chromecast_plugin_web.dart' 
+    if (dart.library.io) 'package:easy_chromecast_plugin/easy_chromecast_plugin_web_stub.dart';
 
-  // StreamController om de status door te geven aan de app
+class EasyChromecastPlugin implements ChromecastFlutterApi {
+  final ChromecastHostApi _api = ChromecastHostApi();
   static final StreamController<bool> _connectionStreamController = StreamController<bool>.broadcast();
   
-  /// Publieke stream waar de gebruiker naar kan luisteren voor verbindingsupdates.
   Stream<bool> get onConnectionChanged => _connectionStreamController.stream;
   
   EasyChromecastPlugin();
   
-  // Dit is de methode die automatisch vanuit Android/iOS wordt aangeroepen via Pigeon
   @override
   void onConnectionStatusChanged(bool isConnected) {
     _connectionStreamController.add(isConnected);
   }
 
   /// Initialiseer de Google Cast SDK.
-  /// Moet vroeg in de app-lifecycle worden aangeroepen.
   Future<void> initializeCast() async {
-    ChromecastFlutterApi.setUp(this);
-    await _api.initializeCast();
+    if (kIsWeb) {
+      await EasyChromecastPluginWeb.initializeCast();
+    } else {
+      ChromecastFlutterApi.setUp(this);
+      await _api.initializeCast();
+    }
   }
 
-  /// Controleer of er momenteel een actieve verbinding is met een Chromecast.
+  /// Controleer of er momenteel een actieve verbinding is.
   Future<bool> isConnected() async {
-    return await _api.isConnected();
+    if (kIsWeb) {
+      return await EasyChromecastPluginWeb.isConnected();
+    } else {
+      return await _api.isConnected();
+    }
   }
 
-  /// Opent het officiële native dialoogvenster om een Chromecast te selecteren.
+  /// Opent het dialoogvenster.
   Future<void> showCastDialog() async {
-    await _api.showCastDialog();
+    if (kIsWeb) {
+      await EasyChromecastPluginWeb.showCastDialog();
+    } else {
+      await _api.showCastDialog();
+    }
   }  
 
-  /// Start het afspelen van een video op de Chromecast.
+  /// Start het afspelen van een video.
   Future<void> playMedia({required String url, required String title}) async {
-    final request = CastMediaRequest(url: url, title: title);
-    await _api.playMedia(request);
+    if (kIsWeb) {
+      await EasyChromecastPluginWeb.playMedia(url, title);
+    } else {
+      final request = CastMediaRequest(url: url, title: title);
+      await _api.playMedia(request);
+    }
   }
 
-  /// Pauzeer de video die momenteel op de Chromecast afspeelt.
   Future<void> pauseMedia() async {
-    await _api.pauseMedia();
+    if (kIsWeb) { await EasyChromecastPluginWeb.pauseMedia(); } else { await _api.pauseMedia(); }
   }
 
-  /// Hervat de gepauzeerde video op de Chromecast.
   Future<void> resumeMedia() async {
-    await _api.resumeMedia();
+    if (kIsWeb) { await EasyChromecastPluginWeb.resumeMedia(); } else { await _api.resumeMedia(); }
   }
 
-  /// Spoel naar een specifieke seconde in de video op de Chromecast.
   Future<void> seekMedia(int positionInSeconds) async {
-    await _api.seekMedia(positionInSeconds);
+    if (kIsWeb) { await EasyChromecastPluginWeb.seekMedia(positionInSeconds); } else { await _api.seekMedia(positionInSeconds); }
   }
   
-  /// Stop het afspelen van de huidige media.
   Future<void> stopMedia() async {
-    await _api.stopMedia();
+    if (kIsWeb) { await EasyChromecastPluginWeb.stopMedia(); } else { await _api.stopMedia(); }
   }
  
-  /// Disconnect device 
   Future<void> disconnectDevice() async {
-    await _api.disconnectDevice();
+    if (kIsWeb) { await EasyChromecastPluginWeb.disconnectDevice(); } else { await _api.disconnectDevice(); }
   }
 }

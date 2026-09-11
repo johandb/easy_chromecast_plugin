@@ -1,6 +1,6 @@
 name: easy_chromecast_plugin
 description: A modern, type-safe Flutter plugin for Google Chromecast. Powered by Kotlin and Pigeon, optimized for streaming VOD and Live IPTV streams (.ts, .m3u8, .mp4).
-version: 1.0.5
+version: 1.0.6
 # Vervang onderstaande URL's door je eigen GitHub repository zodra je hem hebt gepusht
 repository: https://github.com/johandb/easy_chromecast_plugin.git
 issue_tracker: https://github.com/johandb/easy_chromecast_plugin/issues
@@ -14,6 +14,10 @@ dependencies:
     sdk: flutter
   plugin_platform_interface: ^2.1.8  
   meta: ^1.11.0
+  
+  flutter_web_plugins:
+    sdk: flutter
+  web: ^0.5.1  
 
 dev_dependencies:
   flutter_test:
@@ -35,3 +39,6 @@ flutter:
         pluginClass: EasyChromecastPlugin
       ios:
         pluginClass: EasyChromecastPlugin
+      web:
+        pluginClass: EasyChromecastPluginWeb
+        fileName: easy_chromecast_plugin_web.dart        
