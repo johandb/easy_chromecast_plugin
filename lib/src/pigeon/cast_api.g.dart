@@ -359,12 +359,32 @@ class ChromecastHostApi {
     )
     ;
   }
+
+  Future<void> setVolume(double volume) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.easy_chromecast_plugin.ChromecastHostApi.setVolume$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[volume]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+        pigeonVar_replyList,
+        pigeonVar_channelName,
+        isNullValid: true,
+    )
+    ;
+  }
 }
 
 abstract class ChromecastFlutterApi {
   static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
 
   void onConnectionStatusChanged(bool isConnected);
+
+  void onMediaStatusChanged(String playerState);
 
   static void setUp(ChromecastFlutterApi? api, {BinaryMessenger? binaryMessenger, String messageChannelSuffix = '',}) {
     messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
@@ -380,6 +400,27 @@ abstract class ChromecastFlutterApi {
           final bool arg_isConnected = args[0]! as bool;
           try {
             api.onConnectionStatusChanged(arg_isConnected);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          }          catch (e) {
+            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          }
+        });
+      }
+    }
+    {
+      final pigeonVar_channel = BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.easy_chromecast_plugin.ChromecastFlutterApi.onMediaStatusChanged$messageChannelSuffix', pigeonChannelCodec,
+          binaryMessenger: binaryMessenger);
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          final List<Object?> args = message! as List<Object?>;
+          final String arg_playerState = args[0]! as String;
+          try {
+            api.onMediaStatusChanged(arg_playerState);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);

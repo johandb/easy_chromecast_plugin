@@ -9,6 +9,11 @@ import 'package:easy_chromecast_plugin/easy_chromecast_plugin_web.dart'
 class EasyChromecastPlugin implements ChromecastFlutterApi {
   final ChromecastHostApi _api = ChromecastHostApi();
   static final StreamController<bool> _connectionStreamController = StreamController<bool>.broadcast();
+  static final StreamController<String> _mediaStreamController = StreamController<String>.broadcast();
+
+  // FIX: Hernoemd naar onMediaStatusUpdate om het naamconflict met Pigeon op te lossen!
+  /// Listen live to mediastatus updates (example. 'FINISHED') from TV.
+  Stream<String> get onMediaStatusUpdate => _mediaStreamController.stream;
   
   Stream<bool> get onConnectionChanged => _connectionStreamController.stream;
   
@@ -19,6 +24,12 @@ class EasyChromecastPlugin implements ChromecastFlutterApi {
   void onConnectionStatusChanged(bool isConnected) {
     _connectionStreamController.add(isConnected);
   }
+  
+  /// Check media change (Wordt aangeroepen door Pigeon vanuit Native)
+  @override
+  void onMediaStatusChanged(String playerState) {
+    _mediaStreamController.add(playerState);
+  }  
 
   /// Initialiseer de Google Cast SDK.
   Future<void> initializeCast() async {
@@ -77,7 +88,17 @@ class EasyChromecastPlugin implements ChromecastFlutterApi {
   Future<void> stopMedia() async {
     if (kIsWeb) { await EasyChromecastPluginWeb.stopMedia(); } else { await _api.stopMedia(); }
   }
- 
+  
+  /// Change the volume for Chromecast (value between 0.0 and 1.0).
+  Future<void> setVolume(double volume) async {
+    if (kIsWeb) {
+      await EasyChromecastPluginWeb.setVolume(volume);
+    } else {
+      // Voor Android en iOS roepen we de gegenereerde Pigeon API aan
+      await _api.setVolume(volume);
+    }
+  }
+
   /// Disconnect the chromecast device
   Future<void> disconnectDevice() async {
     if (kIsWeb) { await EasyChromecastPluginWeb.disconnectDevice(); } else { await _api.disconnectDevice(); }

@@ -1,4 +1,8 @@
-## 1.1.10
+## 1.0.11
+* Support for volume control
+* Add close media on finish playing media
+
+## 1.0.10
 * Version upgrade web to 1.1.1
 
 ## 1.0.9

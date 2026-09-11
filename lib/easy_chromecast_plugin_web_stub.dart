@@ -8,5 +8,6 @@ class EasyChromecastPluginWeb {
   static Future<void> resumeMedia() async {}
   static Future<void> seekMedia(int positionInSeconds) async {}
   static Future<void> stopMedia() async {}
+  static Future<void> setVolume(double volume) async {}
   static Future<void> disconnectDevice() async {}
 }

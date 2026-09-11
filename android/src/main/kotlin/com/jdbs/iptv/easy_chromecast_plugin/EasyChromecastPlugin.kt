@@ -154,6 +154,13 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
         currentSession?.remoteMediaClient?.stop()
     }
 	
+	override fun setVolume(volume: Double) {
+		android.os.Handler(android.os.Looper.getMainLooper()).post {
+			// Stuur het volume (waarde tussen 0.0 en 1.0) rechtstreeks naar de Chromecast client
+			currentSession?.remoteMediaClient?.setStreamVolume(volume)
+		}
+	}
+	
     override fun disconnectDevice() {
         android.os.Handler(android.os.Looper.getMainLooper()).post {
             castContext?.sessionManager?.endCurrentSession(true)
@@ -166,7 +173,8 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
         override fun onSessionStarted(session: CastSession, sessionId: String) {
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                 if (session.isConnected && session.remoteMediaClient != null) {
-                    // FIX: Lanceer via CoroutineScope op Dispatchers.Main en verwijder {}
+                    // Registreer de media listener zodra de film start
+                    session.remoteMediaClient?.registerCallback(mediaCallback)
                     CoroutineScope(Dispatchers.Main).launch {
                         flutterApi?.onConnectionStatusChanged(true)
                     }
@@ -175,14 +183,14 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
         }
 
         override fun onSessionResumed(session: CastSession, wasSuspended: Boolean) {
-            // FIX: Gecorrigeerd naar asynchrone Coroutine zonder closure
+            session.remoteMediaClient?.registerCallback(mediaCallback)
             CoroutineScope(Dispatchers.Main).launch {
                 flutterApi?.onConnectionStatusChanged(true)
             }
         }
 
         override fun onSessionEnded(session: CastSession, error: Int) {
-            // FIX: Gecorrigeerd naar asynchrone Coroutine zonder closure
+            session.remoteMediaClient?.unregisterCallback(mediaCallback)
             CoroutineScope(Dispatchers.Main).launch {
                 flutterApi?.onConnectionStatusChanged(false)
             }
@@ -201,6 +209,21 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
         override fun onSessionResumeFailed(session: CastSession, error: Int) {}
         override fun onSessionEnding(session: CastSession) {}
     }
+	
+    // FIX: Vang hier de live status van de speler op en stuur 'FINISHED' naar Flutter!
+    private val mediaCallback = object : com.google.android.gms.cast.framework.media.RemoteMediaClient.Callback() {
+        override fun onStatusUpdated() {
+            val client = currentSession?.remoteMediaClient ?: return
+            val mediaStatus = client.mediaStatus ?: return
+            
+            if (mediaStatus.playerState == com.google.android.gms.cast.MediaStatus.PLAYER_STATE_IDLE &&
+                mediaStatus.idleReason == com.google.android.gms.cast.MediaStatus.IDLE_REASON_FINISHED) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    flutterApi?.onMediaStatusChanged("FINISHED")
+                }
+            }
+        }
+    }	
 }
 
 class FixedMediaRouteChooserDialogFragment : MediaRouteChooserDialogFragment() {
