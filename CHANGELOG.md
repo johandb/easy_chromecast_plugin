@@ -1,3 +1,6 @@
+## 1.1.10
+* Version upgrade web to 1.1.1
+
 ## 1.0.9
 * Compile error fix for web
 * Analyze issues fix
