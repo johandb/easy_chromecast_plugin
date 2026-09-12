@@ -1,3 +1,6 @@
+## 1.0.12
+* Update version mismatch
+
 ## 1.0.11
 * Support for volume control
 * Add close media on finish playing media

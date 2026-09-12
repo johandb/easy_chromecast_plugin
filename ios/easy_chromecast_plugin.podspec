@@ -1,11 +1,11 @@
 Pod::Spec.new do |s|
   s.name             = 'easy_chromecast_plugin'
-  s.version          = '1.0.11'
+  s.version          = '1.0.12'
   s.summary          = 'A Flutter plugin for Google Chromecast.'
   s.description      = 'A Flutter plugin for Google Chromecast with Volume and Media Status support.'
   s.homepage         = 'http://example.com'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Your Company' => 'email@example.com' }
+  s.author           = { 'Johan den Boer' => 'info@jdbs.nl' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   
