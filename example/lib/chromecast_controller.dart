@@ -10,7 +10,7 @@ class ChromecastControllerOverlay {
   bool _showVolumeSlider = false; // FIX: Houdt bij of de volumebalk zichtbaar is
   double _currentVolume = 0.5;
   int _currentPositionInSeconds = 0;
-  final int _totalDurationInSeconds = 7200;
+  final int _totalDurationInSeconds = 45;
 
   Future<void> showRemoteControl(BuildContext context, EasyChromecastPlugin plugin, String videoTitle) {
     _mediaSubscription = plugin.onMediaStatusUpdate.listen((status) {
