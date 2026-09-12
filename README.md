@@ -121,6 +121,8 @@ platform :ios, '15.0'
 
 Using the plugin in Dart is completely type-safe and straightforward.
 
+**FOR COMPLETE EXAMPLE SEE THE EXAMPLE FOLDER EXAMPLE/LIB/ !!!!!!!!**
+
 ### Initialization & Connection
 
 ```dart
