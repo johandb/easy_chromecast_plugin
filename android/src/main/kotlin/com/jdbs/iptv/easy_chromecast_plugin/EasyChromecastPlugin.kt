@@ -16,6 +16,10 @@ import com.google.android.gms.cast.framework.SessionManagerListener
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+// FIX: Importeer de benodigde Kotlin Coroutines voor Pigeon
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
 
@@ -32,7 +36,6 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         context = flutterPluginBinding.applicationContext
         
-        // Setup de Pigeon API's met de juiste klassenamen uit je nieuwe pigeon bestand
         ChromecastHostApi.setUp(flutterPluginBinding.binaryMessenger, this)
         flutterApi = ChromecastFlutterApi(flutterPluginBinding.binaryMessenger)
     }
@@ -64,7 +67,6 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
     // --- 3. Implementatie van de ChromecastHostApi ---
 
     override fun initializeCast() {
-        // Zorg dat de initialisatie en listener registratie veilig gebeurt
         android.os.Handler(android.os.Looper.getMainLooper()).post {
             try {
                 castContext = CastContext.getSharedInstance(context)
@@ -152,45 +154,76 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
         currentSession?.remoteMediaClient?.stop()
     }
 	
-	override fun disconnectDevice() {
+	override fun setVolume(volume: Double) {
 		android.os.Handler(android.os.Looper.getMainLooper()).post {
-			// endSession(true) zorgt ervoor dat de Chromecast-verbinding hard wordt verbroken
-			castContext?.sessionManager?.endCurrentSession(true)
+			// Stuur het volume (waarde tussen 0.0 en 1.0) rechtstreeks naar de Chromecast client
+			currentSession?.remoteMediaClient?.setStreamVolume(volume)
 		}
 	}
+	
+    override fun disconnectDevice() {
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            castContext?.sessionManager?.endCurrentSession(true)
+        }
+    }
 
     // --- 4. Google Cast Session Listener (Native -> Dart) ---
 
     private val castSessionListener = object : SessionManagerListener<CastSession> {
         override fun onSessionStarted(session: CastSession, sessionId: String) {
-			// Wacht heel even op de Main Looper tot de client gereed is
-			android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-				if (session.isConnected && session.remoteMediaClient != null) {
-					flutterApi?.onConnectionStatusChanged(true) {}
-				}
-			}, 500)		
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                if (session.isConnected && session.remoteMediaClient != null) {
+                    // Registreer de media listener zodra de film start
+                    session.remoteMediaClient?.registerCallback(mediaCallback)
+                    CoroutineScope(Dispatchers.Main).launch {
+                        flutterApi?.onConnectionStatusChanged(true)
+                    }
+                }
+            }, 500)		
         }
 
         override fun onSessionResumed(session: CastSession, wasSuspended: Boolean) {
-            flutterApi?.onConnectionStatusChanged(true) { /* no-op */ }
+            session.remoteMediaClient?.registerCallback(mediaCallback)
+            CoroutineScope(Dispatchers.Main).launch {
+                flutterApi?.onConnectionStatusChanged(true)
+            }
         }
 
         override fun onSessionEnded(session: CastSession, error: Int) {
-            flutterApi?.onConnectionStatusChanged(false) { /* no-op */ }
+            session.remoteMediaClient?.unregisterCallback(mediaCallback)
+            CoroutineScope(Dispatchers.Main).launch {
+                flutterApi?.onConnectionStatusChanged(false)
+            }
         }
 
         override fun onSessionSuspended(session: CastSession, reason: Int) {
-            flutterApi?.onConnectionStatusChanged(false) { /* no-op */ }
+            // FIX: Gecorrigeerd naar asynchrone Coroutine zonder closure
+            CoroutineScope(Dispatchers.Main).launch {
+                flutterApi?.onConnectionStatusChanged(false)
+            }
         }
 
-        // HIER ZAT DE FOUT: 'sessionId: String' in plaats van 'wasSuspended: Boolean'
         override fun onSessionResuming(session: CastSession, sessionId: String) {}
-        
         override fun onSessionStarting(session: CastSession) {}
         override fun onSessionStartFailed(session: CastSession, error: Int) {}
         override fun onSessionResumeFailed(session: CastSession, error: Int) {}
         override fun onSessionEnding(session: CastSession) {}
     }
+	
+    // FIX: Vang hier de live status van de speler op en stuur 'FINISHED' naar Flutter!
+    private val mediaCallback = object : com.google.android.gms.cast.framework.media.RemoteMediaClient.Callback() {
+        override fun onStatusUpdated() {
+            val client = currentSession?.remoteMediaClient ?: return
+            val mediaStatus = client.mediaStatus ?: return
+            
+            if (mediaStatus.playerState == com.google.android.gms.cast.MediaStatus.PLAYER_STATE_IDLE &&
+                mediaStatus.idleReason == com.google.android.gms.cast.MediaStatus.IDLE_REASON_FINISHED) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    flutterApi?.onMediaStatusChanged("FINISHED")
+                }
+            }
+        }
+    }	
 }
 
 class FixedMediaRouteChooserDialogFragment : MediaRouteChooserDialogFragment() {

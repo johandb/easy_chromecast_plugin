@@ -3,7 +3,7 @@ import UIKit
 import GoogleCast
 
 @objc(EasyChromecastPlugin)
-public class EasyChromecastPlugin: NSObject, FlutterPlugin, ChromecastHostApi, GCKSessionManagerListener {
+public class EasyChromecastPlugin: NSObject, FlutterPlugin, ChromecastHostApi {
   
   private var flutterApi: ChromecastFlutterApi?
 
@@ -26,39 +26,6 @@ public class EasyChromecastPlugin: NSObject, FlutterPlugin, ChromecastHostApi, G
     instance.flutterApi = ChromecastFlutterApi(binaryMessenger: binaryMessenger)
   }
 
-  @objc private func contextInitialized() {
-    DispatchQueue.main.async {
-      if GCKCastContext.isSharedInstanceInitialized() {
-        GCKCastContext.sharedInstance().sessionManager.add(self)
-      }
-    }
-  }
-
-  // MARK: - GCKSessionManagerListener (Status terugsturen naar Dart - FIX: Concurrency & Try/Await)
-  public func sessionManager(_ sessionManager: GCKSessionManager, didStart session: GCKSession) {
-    Task {
-      try? await flutterApi?.onConnectionStatusChanged(isConnected: true)
-    }
-  }
-
-  public func sessionManager(_ sessionManager: GCKSessionManager, didEnd session: GCKSession, error: Error?) {
-    Task {
-      try? await flutterApi?.onConnectionStatusChanged(isConnected: false)
-    }
-  }
-  
-  public func sessionManager(_ sessionManager: GCKSessionManager, didFailToStart session: GCKSession, error: Error) {
-    Task {
-      try? await flutterApi?.onConnectionStatusChanged(isConnected: false)
-    }
-  }
-  
-  public func sessionManager(_ sessionManager: GCKSessionManager, didResumeSession session: GCKSession) {
-    Task {
-      try? await flutterApi?.onConnectionStatusChanged(isConnected: true)
-    }
-  }
-
   // MARK: - ChromecastHostApi Implementatie
   func initializeCast() throws {
     DispatchQueue.main.async {
@@ -69,8 +36,7 @@ public class EasyChromecastPlugin: NSObject, FlutterPlugin, ChromecastHostApi, G
         GCKCastContext.sharedInstance().useDefaultExpandedMediaControls = true
       }
       
-      // FIX: Dwing de Cast SDK om NU te gaan zoeken op het wifi-netwerk!
-      // Dit triggert per direct de officiële iOS Lokaal Netwerk permissie-popup!
+      // Dwing de Cast SDK om NU te gaan zoeken op het wifi-netwerk!
       GCKCastContext.sharedInstance().discoveryManager.startDiscovery()
       print("EasyChromecastPlugin: startDiscovery geforceerd gestart!")
     }
@@ -108,6 +74,9 @@ public class EasyChromecastPlugin: NSObject, FlutterPlugin, ChromecastHostApi, G
       metadata.setString(request.title, forKey: kGCKMetadataKeyTitle)
       mediaInfoBuilder.metadata = metadata
 
+      // Registreer deze klasse als luisteraar voor de media updates van deze sessie
+      remoteMediaClient.add(self)
+
       let mediaLoadOptions = GCKMediaLoadOptions()
       mediaLoadOptions.autoplay = true
       remoteMediaClient.loadMedia(mediaInfoBuilder.build(), with: mediaLoadOptions)
@@ -140,5 +109,80 @@ public class EasyChromecastPlugin: NSObject, FlutterPlugin, ChromecastHostApi, G
       }
     }
   }
+
+  // FIX: GCKCastSession gebruikt setDeviceVolume in plaats van setVolume!
+  func setVolume(volume: Double) throws {
+    DispatchQueue.main.async {
+      guard GCKCastContext.isSharedInstanceInitialized(),
+            let currentSession = GCKCastContext.sharedInstance().sessionManager.currentCastSession else { return }
+      
+      // Google Cast verwacht een Float tussen 0.0 en 1.0
+      let targetVolume = Float(volume)
+      currentSession.setDeviceVolume(targetVolume)
+    }
+  }
+}
+
+// MARK: - GCKRemoteMediaClientListener (Zorgt voor mediaOnchange / Update)
+extension EasyChromecastPlugin: GCKRemoteMediaClientListener {
+    
+    // FIX: mediaStatus moet optioneel (GCKMediaStatus?) zijn om te voldoen aan het protocol
+    public func remoteMediaClient(_ client: GCKRemoteMediaClient, didUpdate mediaStatus: GCKMediaStatus?) {
+        guard let status = mediaStatus else { return }
+        let playerState: String
+        
+        switch status.playerState {
+        case .idle:
+            playerState = "IDLE"
+        case .playing:
+            playerState = "PLAYING"
+        case .paused:
+            playerState = "PAUSED"
+        case .buffering:
+            playerState = "BUFFERING"
+        case .unknown:
+            playerState = "UNKNOWN"
+        @unknown default:
+            playerState = "UNKNOWN"
+        }
+        
+        // Verzend de update veilig naar Flutter via Pigeon
+        Task {
+            try? await self.flutterApi?.onMediaStatusChanged(playerState: playerState)
+        }
+    }
+}
+
+// MARK: - GCKSessionManagerListener (Zorgt voor Connection Status)
+extension EasyChromecastPlugin: GCKSessionManagerListener {
+    
+    public func sessionManager(_ sessionManager: GCKSessionManager, didStart session: GCKSession) {
+        Task {
+            try? await self.flutterApi?.onConnectionStatusChanged(isConnected: true)
+        }
+        
+        if let castSession = session as? GCKCastSession {
+            castSession.remoteMediaClient?.add(self)
+        }
+    }
+    
+    public func sessionManager(_ sessionManager: GCKSessionManager, didEnd session: GCKSession, withError error: Error?) {
+        Task {
+            try? await self.flutterApi?.onConnectionStatusChanged(isConnected: false)
+        }
+    }
+    
+    public func sessionManager(_ sessionManager: GCKSessionManager, didFailToStart session: GCKSession, withError error: Error) {
+        Task {
+            try? await self.flutterApi?.onConnectionStatusChanged(isConnected: false)
+        }
+    }
+    
+    public func sessionManager(_ sessionManager: GCKSessionManager, didResumeCastSession session: GCKCastSession) {
+        Task {
+            try? await self.flutterApi?.onConnectionStatusChanged(isConnected: true)
+        }
+        session.remoteMediaClient?.add(self)
+    }
 }
 

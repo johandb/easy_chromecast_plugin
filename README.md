@@ -62,13 +62,37 @@ Open your `android/app/src/main/AndroidManifest.xml` and add the following netwo
 </manifest>
 ```
 
-## iOS Setup
+#### Register the CastOptionsProvider
+To prevent the Cast SDK from failing at initialization, add the following `<meta-data>` tag inside the `<application>` block of your host app's `AndroidManifest.xml`:
+
+```xml
+<application ...>
+    <meta-data
+        android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
+        android:value="com.jdbs.iptv.easy_chromecast_plugin.CastOptionsProvider" />
+</application>
+```
+
+### 2. Web Setup
+
+To enable Google Chromecast support in web applications, you must include the official Google Chrome Sender SDK script in your project's main HTML file.
+
+Open `web/index.html` in your Flutter project and paste the following script tag inside the `<head>` block:
+
+```html
+<script type="text/javascript" src="https://gstatic.com"></script>
+```
+
+*Note: The Google Cast Web SDK is only supported in Chromium-based browsers (like Google Chrome and Microsoft Edge) and requires a Secure Context (HTTPS) or localhost during local development.*
+
+
+### 3. iOS Setup
 
 Since iOS 14, Apple requires explicit user permission to discover and connect to devices on the local network. To make the plugin work on iOS, you must update your app's configuration.
 
 ### 1. Update Info.plist
 
-Open `ios/Runner/Info.plist` in your project and add the following keys inside the `<dict>` tag:
+Open `Info.plist` of your project and add the following keys inside the `<dict>` tag:
 
 ```xml
 <key>NSLocalNetworkUsageDescription</key>
@@ -85,22 +109,10 @@ Open `ios/Runner/Info.plist` in your project and add the following keys inside t
 
 ### 2. Podfile / Deployment Target
 
-The Google Cast SDK requires a minimum deployment target of **iOS 14.0**. Make sure your `ios/Podfile` has the platform version set correctly:
+The Google Cast SDK requires a minimum deployment target of **iOS 15.0**. Make sure your `ios/Podfile` has the platform version set correctly:
 
 ```ruby
-platform :ios, '14.0'
-```
-
-
-#### Register the CastOptionsProvider
-To prevent the Cast SDK from failing at initialization, add the following `<meta-data>` tag inside the `<application>` block of your host app's `AndroidManifest.xml`:
-
-```xml
-<application ...>
-    <meta-data
-        android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
-        android:value="com.jdbs.iptv.easy_chromecast_plugin.CastOptionsProvider" />
-</application>
+platform :ios, '15.0'
 ```
 
 ---
@@ -108,6 +120,8 @@ To prevent the Cast SDK from failing at initialization, add the following `<meta
 ## Usage
 
 Using the plugin in Dart is completely type-safe and straightforward.
+
+**FOR COMPLETE EXAMPLE SEE THE EXAMPLE FOLDER EXAMPLE/LIB/ !!!!!!!!**
 
 ### Initialization & Connection
 

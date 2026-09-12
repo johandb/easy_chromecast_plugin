@@ -1,3 +1,29 @@
+## 1.0.11
+* Support for volume control
+* Add close media on finish playing media
+
+## 1.0.10
+* Version upgrade web to 1.1.1
+
+## 1.0.9
+* Compile error fix for web
+* Analyze issues fix
+
+## 1.0.8
+* Fix dart:js deprecation warning and updated dartdoc comments
+
+## 1.0.7
+* Updated README for web
+
+## 1.0.6
+* Add Web support for plugin
+
+## 1.0.5
+* Readme fix for Android
+
+## 1.0.4
+* Bugfix Android 
+
 ## 1.0.3
 * Add chromecast support for IOS
 

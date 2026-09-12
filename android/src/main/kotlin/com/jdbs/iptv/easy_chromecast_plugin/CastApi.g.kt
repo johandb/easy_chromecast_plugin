@@ -274,6 +274,7 @@ interface ChromecastHostApi {
   fun pauseMedia()
   fun resumeMedia()
   fun seekMedia(positionInSeconds: Long)
+  fun setVolume(volume: Double)
 
   companion object {
     /** The codec used by ChromecastHostApi. */
@@ -431,6 +432,24 @@ interface ChromecastHostApi {
           channel.setMessageHandler(null)
         }
       }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.easy_chromecast_plugin.ChromecastHostApi.setVolume$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val volumeArg = args[0] as Double
+            val wrapped: List<Any?> = try {
+              api.setVolume(volumeArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              CastApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
     }
   }
 }
@@ -449,6 +468,25 @@ class ChromecastFlutterApi(private val binaryMessenger: BinaryMessenger, private
       val channelName = "dev.flutter.pigeon.easy_chromecast_plugin.ChromecastFlutterApi.onConnectionStatusChanged$separatedMessageChannelSuffix"
       val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
       channel.send(listOf(isConnectedArg)) {
+        if (it is List<*>) {
+          if (it.size > 1) {
+            continuation.resumeWithException(FlutterError(it[0] as String, it[1] as String, it[2] as String?))
+          } else {
+            continuation.resume(Unit)
+          }
+        } else {
+          continuation.resumeWithException(CastApiPigeonUtils.createConnectionError(channelName))
+        } 
+      }
+    }
+  }
+  suspend fun onMediaStatusChanged(playerStateArg: String)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    return suspendCancellableCoroutine { continuation ->
+      val channelName = "dev.flutter.pigeon.easy_chromecast_plugin.ChromecastFlutterApi.onMediaStatusChanged$separatedMessageChannelSuffix"
+      val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+      channel.send(listOf(playerStateArg)) {
         if (it is List<*>) {
           if (it.size > 1) {
             continuation.resumeWithException(FlutterError(it[0] as String, it[1] as String, it[2] as String?))
