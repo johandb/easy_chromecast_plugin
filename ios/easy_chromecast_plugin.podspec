@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'easy_chromecast_plugin'
-  s.version          = '1.0.10'
+  s.version          = '1.0.11'
   s.summary          = 'A Flutter plugin for Google Chromecast.'
   s.description      = 'A Flutter plugin for Google Chromecast with Volume and Media Status support.'
   s.homepage         = 'http://example.com'
