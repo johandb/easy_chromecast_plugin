@@ -1,3 +1,6 @@
+## 1.0.13
+* Bug fix setVolume on Android
+
 ## 1.0.12
 * Update version mismatch
 

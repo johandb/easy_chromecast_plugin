@@ -156,8 +156,25 @@ class EasyChromecastPlugin : FlutterPlugin, ChromecastHostApi, ActivityAware {
 	
 	override fun setVolume(volume: Double) {
 		android.os.Handler(android.os.Looper.getMainLooper()).post {
-			// Stuur het volume (waarde tussen 0.0 en 1.0) rechtstreeks naar de Chromecast client
-			currentSession?.remoteMediaClient?.setStreamVolume(volume)
+			val session = currentSession ?: return@post
+			if (!session.isConnected) return@post
+
+			try {
+				// Beveilig de waarde tussen 0.0 en 1.0
+				val safeVolume = volume.coerceIn(0.0, 1.0)
+            
+				// FIX: Pas het volume aan op de sessie (dit regelt het algehele Chromecast-volume)
+				session.volume = safeVolume
+            
+				print("[Chromecast] Sessie volume ingesteld op: $safeVolume")
+			} catch (e: Exception) {
+				// Fallback naar stream volume als het sessievolume een uitzondering geeft
+				try {
+					session.remoteMediaClient?.setStreamVolume(volume)
+				} catch (inner: Exception) {
+					print("[Chromecast] Volume fout: ${inner.message}")
+				}
+			}
 		}
 	}
 	
